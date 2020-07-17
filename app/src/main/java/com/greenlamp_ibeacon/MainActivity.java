@@ -10,10 +10,13 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
+import androidx.appcompat.widget.AppCompatTextView;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
@@ -26,20 +29,35 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     protected static final String TAG = "MainActivity";
     private BeaconManager mBM;
-    private BluetoothAdapter mBluetooth;
     private List<Beacon> mBeaconlist = new ArrayList<>();
     private final Region region = new Region("Greenlamp", null, null, null);
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
 
+    @BindView(R.id.main_button)
+    AppCompatButton mButton;
+
+    @BindView(R.id.main_uuid)
+    AppCompatTextView mUuid;
+
+    @BindView(R.id.main_major)
+    AppCompatTextView mMajor;
+
+    @BindView(R.id.main_minor)
+    AppCompatTextView mMinor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ButterKnife.bind(this);
 
         Log.d(TAG, "@@@@@ App started up @@@@@");
         Button mbt = findViewById(R.id.main_button);
@@ -75,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         });
 
         try {
-            mBM.startRangingBeaconsInRegion(new Region("Greenlamp", null, null, null));
+            mBM.startRangingBeaconsInRegion(region);
         } catch (RemoteException e) {
             Log.e(TAG, "Remote Exception Error : ");
             e.printStackTrace();
@@ -134,14 +152,34 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             }
         }
     }
+    
+    /**
+     *  클릭 시 비콘이 감지가 되면 정보 출력 후 탐색 끝냄
+     * */
 
     public void onStartDetecting(View v) {
+        Beacon bcGreen = null;
+        String uuid = "";
         for (Beacon bc : mBeaconlist) {
-
+            uuid = bc.getId1().toString();
+            if ((uuid.equals("e2c56db5-dffb-48d2-b060-d0f5a71096e0"))) {
+                bcGreen = bc;
+            }
             Log.d(TAG, "@@@ BTID : " + bc.getBluetoothAddress());
             Log.d(TAG, "@@@ ID1 : " + bc.getId1());
             Log.d(TAG, "@@@ ID2 : " + bc.getId2());
             Log.d(TAG, "@@@ ID3 : " + bc.getId3());
+
         }
+
+        if (bcGreen != null) {
+            mUuid.setText("UUID : " + bcGreen.getId1());
+            mMajor.setText("Major : " + bcGreen.getId2());
+            mMinor.setText("Minor : " + bcGreen.getId3());
+            onDestroy();
+        } else {
+            Toast.makeText(this, "비콘이 감지되지 않습니다.", Toast.LENGTH_SHORT).show();
+        }
+
     }
 }
